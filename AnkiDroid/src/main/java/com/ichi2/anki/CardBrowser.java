@@ -54,6 +54,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.google.gson.JsonObject;
 import com.ichi2.anim.ActivityTransitionAnimation;
 import com.ichi2.anki.dialogs.CardBrowserMySearchesDialog;
 import com.ichi2.anki.dialogs.CardBrowserOrderDialog;
@@ -95,6 +96,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -1963,7 +1965,11 @@ public class CardBrowser extends NavigationDrawerActivity implements
         mActionBarSpinner.setVisibility(View.VISIBLE);
         mActionBarTitle.setVisibility(View.GONE);
     }
-
+//    实现思路：
+//    sendrequest调用testadd
+//    testadd先读取model，得到需要爬取的来源
+//    根据来源调用getfromyoudao和getfrombaicizhan进行爬取，将结果放在一个json里
+//    添加卡片时判断音频和视频进行下载到本地，并重命名
 
     private int[] sendRequest(String parameter)
     {
@@ -1975,7 +1981,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
 
                     // 定义即将访问的链接
                     String url = String.format("http://mall.baicizhan.com/ws/search?w=%s",  fastq.getString("fastq"));
-                    Log.d("main", url);
+
                     // 定义一个字符串用来存储网页内容
                     String result = "";
                     // 定义一个缓冲字符输入流
@@ -2013,7 +2019,8 @@ public class CardBrowser extends NavigationDrawerActivity implements
                     } else {
                         JSONObject answer = new JSONObject(result);
                         answer.put("sound","http://baicizhan.qiniucdn.com/word_audios/"+fastq.getString("fastq")+".mp3");
-                        testAdd(answer.toString());
+//                        testAdd(answer.toString());
+                        testAdd("apple");
                         File file=new File( Environment.getExternalStorageDirectory()+"/AnkiDroid/collection.media/"+ "paqpao.txt");
                         FileOutputStream outStream = new FileOutputStream(file);
                         outStream.write("test".getBytes());
@@ -2038,63 +2045,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
         }
         return success;
     }
-//    private int[] sendRequest(String parameter){
-//        final String canshu = parameter;
-//        final int[] success = new int[1];
-//        Thread thread = new Thread(){
-//            public void run() {
-//                try {
-//                    URL url = new URL("http://39.107.105.182:9999/getword");
-//                    HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
-//                    urlConn.setConnectTimeout(5*1000);//设置连接时间为5秒
-//                    urlConn.setReadTimeout(5*1000);//设置读取时间为5秒
-//                    urlConn.setRequestMethod("POST");//设置请求方式为post
-//                    urlConn.setDoOutput(true);
-//                    urlConn.setDoInput(true);
-//                    //添加参数
-//                    OutputStream outputStream = urlConn.getOutputStream();
-//                    String data = canshu;//拼装参数
-//                    outputStream.write(data.getBytes());//上传参数
-//                    AlertDialog.Builder builder = new AlertDialog.Builder(CardBrowser.this);
-//                    int code = urlConn.getResponseCode();
-//                    if(code == 200){//相应成功，获得相应的数据
-//                        InputStream is = urlConn.getInputStream();//得到数据流（输入流）
-//
-//                        byte[] buffer = new byte[1024];
-//                        int length = 0;
-//                        String str = "";
-//                        while((length = is.read(buffer)) > -1){
-//                            str += new String(buffer,0,length);
-//                        }
-//                        Log.d("main", str);
-//                        System.out.println(str+"嘿嘿嘿");
-//                        testAdd(str);
-//                        success[0] = 1;
-//                    }
-//                    else{
-//                        success[0] = 0;
-//                    }
-//
-//                } catch (MalformedURLException e) {
-//                    // TODO Auto-generated catch block
-//                    e.printStackTrace();
-//                } catch (IOException e) {
-//                    // TODO Auto-generated catch block
-//                    e.printStackTrace();
-//                }
-//            };
-//        };
-//        thread.start();
-//        try
-//        {
-//            thread.join();
-//        }
-//        catch (InterruptedException e)
-//        {
-//            e.printStackTrace();
-//        }
-//        return success;
-//    }
+
     private void testAdd(String str) {
         //线程创建相关
         DeckTask.TaskListener mSaveFactHandler = new DeckTask.TaskListener() {
@@ -2115,7 +2066,6 @@ public class CardBrowser extends NavigationDrawerActivity implements
         JSONObject model = null;
         String basic = "test";
 
-
         //遍历所有model，找到Basic模板，设置为当前model
         for (JSONObject m : models) {
             try {
@@ -2128,7 +2078,35 @@ public class CardBrowser extends NavigationDrawerActivity implements
                 throw new RuntimeException(e);
             }
         }
-        Log.d("main", "testAdd: "+model.toString());
+
+        try {
+            Set hs = new HashSet();
+            String[] key1= model.getJSONObject("source").getString("单词").split(":");
+            hs.add(key1[0]);
+            key1=model.getJSONObject("source").getString("音标").split(":");
+            hs.add(key1[0]);
+            key1=model.getJSONObject("source").getString("释义").split(":");
+            hs.add(key1[0]);
+            key1=model.getJSONObject("source").getString("例句").split(":");
+            hs.add(key1[0]);
+            key1=model.getJSONObject("source").getString("图片").split(":");
+            hs.add(key1[0]);
+            key1=model.getJSONObject("source").getString("音频").split(":");
+            hs.add(key1[0]);
+            Iterator it = hs.iterator();
+            while (it.hasNext()) {
+                Log.d("main", "testAdd: "+it.next());
+            }
+            Log.d("main", "testAdd1: "+get_from_Youdao(str));
+            Log.d("main", "testAdd2: "+get_from_Baicizhan(str));
+
+        }
+        catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+
+
 
         JSONObject cdeck = getCol().getDecks().current();
         long cdeckid = 1;
@@ -2164,7 +2142,9 @@ public class CardBrowser extends NavigationDrawerActivity implements
         String accent = null;
         String sound = null;
         JSONObject mJson = null;
+
         try{
+
             mJson = new JSONObject(str);
             word = mJson.getString("word") + "<br>";
             img = "<img src='" + mJson.getString("img") + "'/><br>";
@@ -2186,4 +2166,107 @@ public class CardBrowser extends NavigationDrawerActivity implements
         getCol().getModels().setChanged();
         DeckTask.launchDeckTask(DeckTask.TASK_TYPE_ADD_FACT, mSaveFactHandler, new DeckTask.TaskData(note));
     }
+    public JSONObject get_from_Youdao(String str)
+    {
+        String url = String.format("http://fanyi.youdao.com/openapi.do?keyfrom=youdaoci&key=694691143&type=data&doctype=json&version=1.1&q=%s", str);
+        // 定义一个字符串用来存储网页内容
+        String result = "";
+        JSONObject result_json=null;
+        // 定义一个缓冲字符输入流
+        BufferedReader in = null;
+        try {
+            // 将string转成url对象
+            URL realUrl = new URL(url);
+            // 初始化一个链接到那个url的连接
+            URLConnection connection = realUrl.openConnection();
+            // 开始实际的连接
+            connection.connect();
+            // 初始化 BufferedReader输入流来读取URL的响应
+            in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            // 用来临时存储抓取到的每一行的数据
+            String line;
+            while ((line = in.readLine()) != null) {
+                // 遍历抓取到的每一行并将其存储到result里面
+                result += line + "\n";
+            }
+
+            result_json=new JSONObject(result);
+            result_json=result_json.getJSONObject("basic");
+            result_json.put("word",str);
+            result_json.put("sound","http://dict.youdao.com/dictvoice?type=0&audio=" +str);// 美音 type=0 英音type=1
+
+            result_json.put("errormsg",0);
+
+        } catch (Exception e) {
+            System.out.println("发送GET请求出现异常！" + e);
+            result="{\"errormsg\":-1}";
+            try {
+                result_json=new JSONObject(result);
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
+        } // 使用finally来关闭输入流
+        finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (Exception e2) {
+                e2.printStackTrace();
+            }
+        }
+        return result_json;
+    }
+    public JSONObject get_from_Baicizhan(String str)
+    {
+        String url = String.format("http://mall.baicizhan.com/ws/search?w=%s", str);
+        // 定义一个字符串用来存储网页内容
+        String result = "";
+        JSONObject result_json=null;
+        // 定义一个缓冲字符输入流
+        BufferedReader in = null;
+        try {
+            // 将string转成url对象
+            URL realUrl = new URL(url);
+            // 初始化一个链接到那个url的连接
+            URLConnection connection = realUrl.openConnection();
+            // 开始实际的连接
+            connection.connect();
+            // 初始化 BufferedReader输入流来读取URL的响应
+            in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            // 用来临时存储抓取到的每一行的数据
+            String line;
+            while ((line = in.readLine()) != null) {
+                // 遍历抓取到的每一行并将其存储到result里面
+                result += line + "\n";
+            }
+            result_json=new JSONObject(result);
+            result_json.put("sound","http://baicizhan.qiniucdn.com/word_audios/" +str+".mp3");
+            result_json.put("errormsg",0);
+
+        } catch (Exception e) {
+            System.out.println("发送GET请求出现异常！" + e);
+            result="{\"errormsg\":-1}";
+            try {
+                result_json=new JSONObject(result);
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
+        } // 使用finally来关闭输入流
+        finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (Exception e2) {
+                e2.printStackTrace();
+            }
+        }
+        return result_json;
+
+    }
+
+
+
+
 }
