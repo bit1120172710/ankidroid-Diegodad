@@ -1978,54 +1978,15 @@ public class CardBrowser extends NavigationDrawerActivity implements
             public void run() {
                 try {
                     JSONObject fastq = new JSONObject(parameter);
-
-                    // 定义即将访问的链接
-                    String url = String.format("http://mall.baicizhan.com/ws/search?w=%s",  fastq.getString("fastq"));
-
-                    // 定义一个字符串用来存储网页内容
-                    String result = "";
-                    // 定义一个缓冲字符输入流
-                    BufferedReader in = null;
-                    try {
-                        // 将string转成url对象
-                        URL realUrl = new URL(url);
-                        // 初始化一个链接到那个url的连接
-                        URLConnection connection = realUrl.openConnection();
-                        // 开始实际的连接
-                        connection.connect();
-                        // 初始化 BufferedReader输入流来读取URL的响应
-                        in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                        // 用来临时存储抓取到的每一行的数据
-                        String line;
-                        while ((line = in.readLine()) != null) {
-                            // 遍历抓取到的每一行并将其存储到result里面
-                            result += line + "\n";
-                        }
-                    } catch (Exception e) {
-                        System.out.println("发送GET请求出现异常！" + e);
-                        e.printStackTrace();
-                    } // 使用finally来关闭输入流
-                    finally {
-                        try {
-                            if (in != null) {
-                                in.close();
-                            }
-                        } catch (Exception e2) {
-                            e2.printStackTrace();
-                        }
-                    }
-                    if (result == null) {
+                    int errormsg= testAdd(fastq.getString("fastq"));
+                    if (errormsg<0) {
                         success[0] = 0;
                     } else {
-                        JSONObject answer = new JSONObject(result);
-                        answer.put("sound","http://baicizhan.qiniucdn.com/word_audios/"+fastq.getString("fastq")+".mp3");
-//                        testAdd(answer.toString());
-                        testAdd("apple");
-                        File file=new File( Environment.getExternalStorageDirectory()+"/AnkiDroid/collection.media/"+ "paqpao.txt");
-                        FileOutputStream outStream = new FileOutputStream(file);
-                        outStream.write("test".getBytes());
-                        outStream.close();
-                        Log.d("main",Environment.getExternalStorageDirectory().toString());
+//                        File file=new File( Environment.getExternalStorageDirectory()+"/AnkiDroid/collection.media/"+ "paqpao.txt");
+//                        FileOutputStream outStream = new FileOutputStream(file);
+//                        outStream.write("test".getBytes());
+//                        outStream.close();
+//                        Log.d("main",Environment.getExternalStorageDirectory().toString());
                         success[0] = 1;
                     }
                 }catch (Exception e)
@@ -2046,7 +2007,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
         return success;
     }
 
-    private void testAdd(String str) {
+    private int testAdd(String str) throws JSONException {
         //线程创建相关
         DeckTask.TaskListener mSaveFactHandler = new DeckTask.TaskListener() {
 
@@ -2078,7 +2039,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
                 throw new RuntimeException(e);
             }
         }
-
+        JSONObject source=new JSONObject();
         try {
             Set hs = new HashSet();
             String[] key1= model.getJSONObject("source").getString("单词").split(":");
@@ -2095,17 +2056,18 @@ public class CardBrowser extends NavigationDrawerActivity implements
             hs.add(key1[0]);
             Iterator it = hs.iterator();
             while (it.hasNext()) {
-                Log.d("main", "testAdd: "+it.next());
-            }
-            Log.d("main", "testAdd1: "+get_from_Youdao(str));
-            Log.d("main", "testAdd2: "+get_from_Baicizhan(str));
+                String s= it.next().toString();
+                if (s.equals("Baicizhan")){
+                    source.put("Baicizhan",get_from_Baicizhan(str));
 
+                }else if (s.equals("Youdao")){
+                    source.put("Youdao",get_from_Youdao(str));
+                }
+            }
         }
         catch (JSONException e) {
             throw new RuntimeException(e);
         }
-
-
 
 
         JSONObject cdeck = getCol().getDecks().current();
@@ -2133,38 +2095,22 @@ public class CardBrowser extends NavigationDrawerActivity implements
         }*/
 
         //解析接受的字符串
-        //str.replace("'","\"");
-        String word = null;
-        String img = null;
-        String st = null;
-        String sttr = null;
-        String mean = null;
-        String accent = null;
-        String sound = null;
-        JSONObject mJson = null;
-
-        try{
-
-            mJson = new JSONObject(str);
-            word = mJson.getString("word") + "<br>";
-            img = "<img src='" + mJson.getString("img") + "'/><br>";
-            st = mJson.getString("st") + "<br>";
-            sttr = mJson.getString("sttr") + "<br>";
-            mean = mJson.getString("mean_cn") + "<br>";
-            accent = mJson.getString("accent") + "<br>";
-            sound = "[sound:" + mJson.getString("sound") + "]<br>";
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
 
         //利用上述模板(model)新建一个Note对象并设置其字段
         Note note = new Note(getCol(),model);
-        note.values()[0] = word + sound;
-        note.values()[1] = img + accent + mean + st + sttr;
+        Iterator iter = model.getJSONObject("source").keys();
+        int i=0;
+        while (iter.hasNext())
+        {
+            String[] key= model.getJSONObject("source").getString(iter.next().toString()).split(":");
+            note.values()[i]=source.getJSONObject(key[0]).getString(key[1]);
+            i++;
+        }
 
         //将更改先保存至Collection，在创建线程写入数据库。
         getCol().getModels().setChanged();
         DeckTask.launchDeckTask(DeckTask.TASK_TYPE_ADD_FACT, mSaveFactHandler, new DeckTask.TaskData(note));
+        return 0;
     }
     public JSONObject get_from_Youdao(String str)
     {
