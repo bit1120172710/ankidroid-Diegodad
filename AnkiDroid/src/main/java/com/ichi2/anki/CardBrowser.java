@@ -80,6 +80,8 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URL;
@@ -1982,11 +1984,8 @@ public class CardBrowser extends NavigationDrawerActivity implements
                     if (errormsg<0) {
                         success[0] = 0;
                     } else {
-//                        File file=new File( Environment.getExternalStorageDirectory()+"/AnkiDroid/collection.media/"+ "paqpao.txt");
-//                        FileOutputStream outStream = new FileOutputStream(file);
-//                        outStream.write("test".getBytes());
-//                        outStream.close();
-//                        Log.d("main",Environment.getExternalStorageDirectory().toString());
+
+
                         success[0] = 1;
                     }
                 }catch (Exception e)
@@ -2025,11 +2024,12 @@ public class CardBrowser extends NavigationDrawerActivity implements
         //得到所有的model（记录类型）和col中的当前牌组
         ArrayList<JSONObject> models = getCol().getModels().all();
         JSONObject model = null;
-        String basic = "test";
+        String basic = "默认单词模板";
 
         //遍历所有model，找到Basic模板，设置为当前model
         for (JSONObject m : models) {
             try {
+
                 if(m.getString("name").equals(basic)) {
                     getCol().getModels().setCurrent(m);
                     model = m;
@@ -2103,7 +2103,69 @@ public class CardBrowser extends NavigationDrawerActivity implements
         while (iter.hasNext())
         {
             String[] key= model.getJSONObject("source").getString(iter.next().toString()).split(":");
-            note.values()[i]=source.getJSONObject(key[0]).getString(key[1]);
+
+            if (key[1].equals("img"))
+            {
+                URL url = null;
+                try {
+                    url = new URL(source.getJSONObject(key[0]).getString(key[1]));
+                    HttpURLConnection conn=(HttpURLConnection)url.openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setConnectTimeout(5*1000);
+                    InputStream inStream = conn.getInputStream();
+                    ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[1024];
+                    int len = -1;
+                    while( (len=inStream.read(buffer)) != -1){
+                        outSteam.write(buffer, 0, len);
+                    }
+                    outSteam.close();
+                    inStream.close();
+                    byte[] data = outSteam.toByteArray();
+                    File file=new File( Environment.getExternalStorageDirectory()+"/AnkiDroid/collection.media/"+ source.getJSONObject(key[0]).getString("word")+".jpg");
+                    FileOutputStream outStream = new FileOutputStream(file);
+                    outStream.write(data);
+                    outStream.close();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                note.values()[i]="<img src=./"+source.getJSONObject(key[0]).getString("word")+".jpg>";
+
+            }else if (key[1].equals("sound"))
+            {
+                URL url = null;
+                try {
+                    url = new URL(source.getJSONObject(key[0]).getString(key[1]));
+                    HttpURLConnection conn=(HttpURLConnection)url.openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setConnectTimeout(5*1000);
+                    InputStream inStream = conn.getInputStream();
+                    ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[1024];
+                    int len = -1;
+                    while( (len=inStream.read(buffer)) != -1){
+                        outSteam.write(buffer, 0, len);
+                    }
+                    outSteam.close();
+                    inStream.close();
+                    byte[] data = outSteam.toByteArray();
+                    File file=new File( Environment.getExternalStorageDirectory()+"/AnkiDroid/collection.media/"+ source.getJSONObject(key[0]).getString("word")+".mp3");
+                    FileOutputStream outStream = new FileOutputStream(file);
+                    outStream.write(data);
+                    outStream.close();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                note.values()[i]="[sound:./"+source.getJSONObject(key[0]).getString("word")+".mp3]";
+
+            }
+            else{
+                note.values()[i]=source.getJSONObject(key[0]).getString(key[1]);
+            }
             i++;
         }
 
