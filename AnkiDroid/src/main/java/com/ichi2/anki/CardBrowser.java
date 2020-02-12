@@ -1548,7 +1548,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
                     public void onClick(DialogInterface dialog, int which) {
 //确定按钮的点击事件,像服务器发送申请下载消息
                         int[] success = sendRequest("{\"fastq\":\""+ mSearchTerms+"\"}" );
-                        if(success[0] == 1){
+                        if(success[0] == 0){
                             builder2.setTitle("提示").setMessage("下载成功").setPositiveButton("刷新", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
@@ -1562,7 +1562,15 @@ public class CardBrowser extends NavigationDrawerActivity implements
                                 }
                             }).show();
                         }
-                        else {
+                        else if (success[0] == -1){
+                            builder2.setTitle("提示").setMessage("下载失败,请检查单词拼写").setNegativeButton("确定", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+//取消按钮的点击事件
+                                }
+                            }).show();
+                        }
+                        else if (success[0] == -2){
                             builder2.setTitle("提示").setMessage("下载失败,请检查网络").setNegativeButton("确定", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialogInterface, int i) {
@@ -1989,11 +1997,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
                 try {
                     JSONObject fastq = new JSONObject(parameter);
                     int errormsg= testAdd(fastq.getString("fastq"));
-                    if (errormsg<0) {
-                        success[0] = 0;
-                    } else {
-                        success[0] = 1;
-                    }
+                    success[0]=errormsg;
                 }catch (Exception e)
                 { Log.d("main", e.getMessage());
                     e.printStackTrace();
@@ -2072,9 +2076,12 @@ public class CardBrowser extends NavigationDrawerActivity implements
                 String s= it.next().toString();
                 if (s.equals("Baicizhan")){
                     source.put("Baicizhan",get_from_Baicizhan(str));
-
+                    if(source.getJSONObject("Baicizhan").getInt("errormsg")<0)
+                        return source.getJSONObject("Baicizhan").getInt("errormsg");
                 }else if (s.equals("Youdao")){
                     source.put("Youdao",get_from_Youdao(str));
+                    if(source.getJSONObject("Youdao").getInt("errormsg")<0)
+                        return source.getJSONObject("Youdao").getInt("errormsg");
                 }
             }
         }
@@ -2218,9 +2225,18 @@ public class CardBrowser extends NavigationDrawerActivity implements
 
             result_json.put("errormsg",0);
 
-        } catch (Exception e) {
-            System.out.println("发送GET请求出现异常！" + e);
+        }
+        catch (JSONException e){
             result="{\"errormsg\":-1}";
+            try {
+                result_json=new JSONObject(result);
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
+    }
+        catch (Exception e) {
+            System.out.println("发送GET请求出现异常！" + e);
+            result="{\"errormsg\":-2}";
             try {
                 result_json=new JSONObject(result);
             } catch (JSONException ex) {
@@ -2265,15 +2281,23 @@ public class CardBrowser extends NavigationDrawerActivity implements
             result_json.put("sound","http://baicizhan.qiniucdn.com/word_audios/" +str+".mp3");
             result_json.put("errormsg",0);
 
-        } catch (Exception e) {
-            System.out.println("发送GET请求出现异常！" + e);
+        }        catch (JSONException e){
             result="{\"errormsg\":-1}";
             try {
                 result_json=new JSONObject(result);
             } catch (JSONException ex) {
                 ex.printStackTrace();
             }
-        } // 使用finally来关闭输入流
+        }
+        catch (Exception e) {
+            System.out.println("发送GET请求出现异常！" + e);
+            result="{\"errormsg\":-2}";
+            try {
+                result_json=new JSONObject(result);
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
+        }// 使用finally来关闭输入流
         finally {
             try {
                 if (in != null) {
