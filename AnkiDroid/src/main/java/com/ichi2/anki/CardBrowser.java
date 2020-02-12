@@ -1989,7 +1989,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
 //    根据来源调用getfromyoudao和getfrombaicizhan进行爬取，将结果放在一个json里
 //    添加卡片时判断音频和视频进行下载到本地，并重命名
 
-    private int[] sendRequest(String parameter)
+    public int[] sendRequest(String parameter)
     {
         final int[] success = new int[1];
         Thread thread = new Thread(){
@@ -2016,7 +2016,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
         return success;
     }
 
-    private int testAdd(String str) throws JSONException {
+    public int testAdd(String str) throws JSONException {
         //线程创建相关
         DeckTask.TaskListener mSaveFactHandler = new DeckTask.TaskListener() {
 

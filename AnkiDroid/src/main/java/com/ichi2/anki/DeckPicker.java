@@ -23,8 +23,10 @@ package com.ichi2.anki;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -38,6 +40,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.provider.Settings;
@@ -55,6 +58,7 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -64,6 +68,7 @@ import android.view.Window;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.getbase.floatingactionbutton.FloatingActionButton;
@@ -98,6 +103,7 @@ import com.ichi2.async.DeckTask.TaskData;
 import com.ichi2.compat.CompatHelper;
 import com.ichi2.libanki.Collection;
 import com.ichi2.libanki.Models;
+import com.ichi2.libanki.Note;
 import com.ichi2.libanki.Sched;
 import com.ichi2.libanki.Utils;
 import com.ichi2.libanki.importer.AnkiPackageImporter;
@@ -109,15 +115,28 @@ import com.ichi2.widget.WidgetStatus;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TreeMap;
 
+
 import timber.log.Timber;
+
 
 public class DeckPicker extends NavigationDrawerActivity implements
         StudyOptionsListener, SyncErrorDialog.SyncErrorDialogListener, ImportDialog.ImportDialogListener,
@@ -473,6 +492,7 @@ public class DeckPicker extends NavigationDrawerActivity implements
         final FloatingActionButton addDeckButton = findViewById(R.id.add_deck_action);
         final FloatingActionButton addSharedButton = findViewById(R.id.add_shared_action);
         final FloatingActionButton addNoteButton = findViewById(R.id.add_note_action);
+        final FloatingActionButton addNoteButton_fast = findViewById(R.id.add_note_action_fast);
         addDeckButton.setOnClickListener(view -> {
             if (mActionsMenu == null) {
                 return;
@@ -502,6 +522,54 @@ public class DeckPicker extends NavigationDrawerActivity implements
             mActionsMenu.collapse();
             addNote();
         });
+
+        addNoteButton_fast.setOnClickListener(view -> {
+            if (mActionsMenu == null) {
+                return;
+            }
+            mActionsMenu.collapse();
+            mDialogEditText = new EditText(DeckPicker.this);
+            mDialogEditText.setSingleLine(true);
+            // mDialogEditText.setFilters(new InputFilter[] { mDeckNameFilter });
+            AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
+            AlertDialog.Builder builder2 = new AlertDialog.Builder(this);
+            new MaterialDialog.Builder(DeckPicker.this)
+                    .title("快捷添加词语")
+                    .positiveText(R.string.dialog_ok)
+                    .customView(mDialogEditText, true)
+                    .onPositive((dialog, which) -> {
+                        String word = mDialogEditText.getText().toString();
+                        Timber.i("DeckPicker:: Creating new deck...");
+                        int[] success = sendRequest("{\"fastq\":\""+ word+"\"}" );
+                        if(success[0] == 0){
+                            builder2.setTitle("提示").setMessage("下载成功").setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+//取消按钮的点击事件
+                                }
+                            }).show();
+                        }
+                        else if (success[0] == -1){
+                            builder2.setTitle("提示").setMessage("下载失败,请检查单词拼写").setNegativeButton("确定", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+//取消按钮的点击事件
+                                }
+                            }).show();
+                        }
+                        else if (success[0] == -2){
+                            builder2.setTitle("提示").setMessage("下载失败,请检查网络").setNegativeButton("确定", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+//取消按钮的点击事件
+                                }
+                            }).show();
+                        }
+                    })
+                    .negativeText(R.string.dialog_cancel)
+                    .show();
+        });
+
     }
 
     @Override
@@ -2286,4 +2354,327 @@ public class DeckPicker extends NavigationDrawerActivity implements
             }
         });
     }
+
+    public int[] sendRequest(String parameter)
+    {
+        final int[] success = new int[1];
+        Thread thread = new Thread(){
+            public void run() {
+                try {
+                    JSONObject fastq = new JSONObject(parameter);
+                    int errormsg= testAdd(fastq.getString("fastq"));
+                    success[0]=errormsg;
+                }catch (Exception e)
+                { Log.d("main", e.getMessage());
+                    e.printStackTrace();
+                }
+            };
+        };
+        thread.start();
+        try
+        {
+            thread.join();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        return success;
+    }
+
+    public int testAdd(String str) throws JSONException {
+        //线程创建相关
+        DeckTask.TaskListener mSaveFactHandler = new DeckTask.TaskListener() {
+
+            @Override
+            public void onPreExecute() {
+
+            }
+
+            @Override
+            public void onPostExecute(DeckTask.TaskData result) {
+
+            }
+        };
+
+        //得到所有的model（记录类型）和col中的当前牌组
+        ArrayList<JSONObject> models = getCol().getModels().all();
+        JSONObject model = null;
+        String basic = "默认单词模板";
+
+        //遍历所有model，找到Basic模板，设置为当前model
+        for (JSONObject m : models) {
+            try {
+
+                if(m.getString("name").equals(basic)) {
+                    getCol().getModels().setCurrent(m);
+
+                    model = m;
+
+                    break;
+                }
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        if (model==null)
+        {
+            model = new JSONObject("{\"sortf\":0,\"did\":1,\"latexPre\":\"\\\\documentclass[12pt]{article}\\n\\\\special{papersize=3in,5in}\\n\\\\usepackage[utf8]{inputenc}\\n\\\\usepackage{amssymb,amsmath}\\n\\\\pagestyle{empty}\\n\\\\setlength{\\\\parindent}{0in}\\n\\\\begin{document}\\n\",\"latexPost\":\"\\\\end{document}\",\"mod\":1581254285,\"usn\":0,\"vers\":[],\"type\":0,\"css\":\".card {\\n font-family: arial;\\n font-size: 20px;\\n text-align: center;\\n color: black;\\n background-color: white;\\n}\\n\",\"name\":\"默认单词模板\",\"flds\":[{\"name\":\"单词\",\"ord\":0,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"音标\",\"ord\":1,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"释义\",\"ord\":2,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"例句\",\"ord\":3,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"图片\",\"ord\":4,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"音频\",\"ord\":5,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]}],\"tmpls\":[{\"name\":\"默认显示样式\",\"ord\":0,\"qfmt\":\"{{单词}}<br>{{音标}}<span class='voice'>{{音频}}<\\/span>\",\"afmt\":\"{{FrontSide}}\\n\\n<hr id=answer>\\n\\n{{释义}}<br>{{例句}}<br>{{图片}}\",\"did\":null,\"bqfmt\":\"\",\"bafmt\":\"\"}],\"tags\":[],\"id\":\"1581254148877\",\"source\":{\"单词\":\"Baicizhan:word\",\"音标\":\"Baicizhan:accent\",\"释义\":\"Baicizhan:mean_cn\",\"例句\":\"Baicizhan:st\",\"图片\":\"Baicizhan:img\",\"音频\":\"Youdao:sound\"},\"req\":[[0,\"any\",[0,1,5]]]}");
+            getCol().getModels().add(model);
+        }
+        JSONObject source=new JSONObject();
+        try {
+            Set hs = new HashSet();
+            String[] key1= model.getJSONObject("source").getString("单词").split(":");
+            hs.add(key1[0]);
+            key1=model.getJSONObject("source").getString("音标").split(":");
+            hs.add(key1[0]);
+            key1=model.getJSONObject("source").getString("释义").split(":");
+            hs.add(key1[0]);
+            key1=model.getJSONObject("source").getString("例句").split(":");
+            hs.add(key1[0]);
+            key1=model.getJSONObject("source").getString("图片").split(":");
+            hs.add(key1[0]);
+            key1=model.getJSONObject("source").getString("音频").split(":");
+            hs.add(key1[0]);
+            Iterator it = hs.iterator();
+            while (it.hasNext()) {
+                String s= it.next().toString();
+                if (s.equals("Baicizhan")){
+                    source.put("Baicizhan",get_from_Baicizhan(str));
+                    if(source.getJSONObject("Baicizhan").getInt("errormsg")<0)
+                        return source.getJSONObject("Baicizhan").getInt("errormsg");
+                }else if (s.equals("Youdao")){
+                    source.put("Youdao",get_from_Youdao(str));
+                    if(source.getJSONObject("Youdao").getInt("errormsg")<0)
+                        return source.getJSONObject("Youdao").getInt("errormsg");
+                }
+            }
+        }
+        catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        JSONObject cdeck = getCol().getDecks().current();
+        long cdeckid = 1;
+        try{
+            cdeckid = cdeck.getLong("id");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+
+        //设置牌组为默认牌组
+        try {
+            model.put("did",cdeckid);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+        //这段没用，可以删除
+        /*JSONObject cdeck = getCol().getDecks().current();
+        try {
+            cdeck.put("mid", model.getLong("id"));
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }*/
+
+        //解析接受的字符串
+
+        //利用上述模板(model)新建一个Note对象并设置其字段
+        Note note = new Note(getCol(),model);
+        Iterator iter = model.getJSONObject("source").keys();
+        int i=0;
+        while (iter.hasNext())
+        {
+            String[] key= model.getJSONObject("source").getString(iter.next().toString()).split(":");
+
+            if (key[1].equals("img"))
+            {
+                URL url = null;
+                try {
+                    url = new URL(source.getJSONObject(key[0]).getString(key[1]));
+                    HttpURLConnection conn=(HttpURLConnection)url.openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setConnectTimeout(5*1000);
+                    InputStream inStream = conn.getInputStream();
+                    ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[1024];
+                    int len = -1;
+                    while( (len=inStream.read(buffer)) != -1){
+                        outSteam.write(buffer, 0, len);
+                    }
+                    outSteam.close();
+                    inStream.close();
+                    byte[] data = outSteam.toByteArray();
+                    File file=new File( Environment.getExternalStorageDirectory()+"/AnkiDroid/collection.media/"+ source.getJSONObject(key[0]).getString("word")+".jpg");
+                    FileOutputStream outStream = new FileOutputStream(file);
+                    outStream.write(data);
+                    outStream.close();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                note.values()[i]="<img src=./"+source.getJSONObject(key[0]).getString("word")+".jpg>";
+
+            }else if (key[1].equals("sound"))
+            {
+                URL url = null;
+                try {
+                    url = new URL(source.getJSONObject(key[0]).getString(key[1]));
+                    HttpURLConnection conn=(HttpURLConnection)url.openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setConnectTimeout(5*1000);
+                    InputStream inStream = conn.getInputStream();
+                    ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[1024];
+                    int len = -1;
+                    while( (len=inStream.read(buffer)) != -1){
+                        outSteam.write(buffer, 0, len);
+                    }
+                    outSteam.close();
+                    inStream.close();
+                    byte[] data = outSteam.toByteArray();
+                    File file=new File( Environment.getExternalStorageDirectory()+"/AnkiDroid/collection.media/"+ source.getJSONObject(key[0]).getString("word")+".mp3");
+                    FileOutputStream outStream = new FileOutputStream(file);
+                    outStream.write(data);
+                    outStream.close();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                note.values()[i]="[sound:./"+source.getJSONObject(key[0]).getString("word")+".mp3]";
+
+            }
+            else{
+                note.values()[i]=source.getJSONObject(key[0]).getString(key[1]);
+            }
+            i++;
+        }
+        //将更改先保存至Collection，在创建线程写入数据库。
+        getCol().getModels().setChanged();
+
+        DeckTask.launchDeckTask(DeckTask.TASK_TYPE_ADD_FACT, mSaveFactHandler, new DeckTask.TaskData(note));
+        return 0;
+    }
+    public JSONObject get_from_Youdao(String str)
+    {
+        String url = String.format("http://fanyi.youdao.com/openapi.do?keyfrom=youdaoci&key=694691143&type=data&doctype=json&version=1.1&q=%s", str);
+        // 定义一个字符串用来存储网页内容
+        String result = "";
+        JSONObject result_json=null;
+        // 定义一个缓冲字符输入流
+        BufferedReader in = null;
+        try {
+            // 将string转成url对象
+            URL realUrl = new URL(url);
+            // 初始化一个链接到那个url的连接
+            URLConnection connection = realUrl.openConnection();
+            // 开始实际的连接
+            connection.connect();
+            // 初始化 BufferedReader输入流来读取URL的响应
+            in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            // 用来临时存储抓取到的每一行的数据
+            String line;
+            while ((line = in.readLine()) != null) {
+                // 遍历抓取到的每一行并将其存储到result里面
+                result += line + "\n";
+            }
+
+            result_json=new JSONObject(result);
+            result_json=result_json.getJSONObject("basic");
+            result_json.put("word",str);
+            result_json.put("sound","http://dict.youdao.com/dictvoice?type=0&audio=" +str);// 美音 type=0 英音type=1
+
+            result_json.put("errormsg",0);
+
+        }
+        catch (JSONException e){
+            result="{\"errormsg\":-1}";
+            try {
+                result_json=new JSONObject(result);
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
+        }
+        catch (Exception e) {
+            System.out.println("发送GET请求出现异常！" + e);
+            result="{\"errormsg\":-2}";
+            try {
+                result_json=new JSONObject(result);
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
+        } // 使用finally来关闭输入流
+        finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (Exception e2) {
+                e2.printStackTrace();
+            }
+        }
+        return result_json;
+    }
+    public JSONObject get_from_Baicizhan(String str)
+    {
+        String url = String.format("http://mall.baicizhan.com/ws/search?w=%s", str);
+        // 定义一个字符串用来存储网页内容
+        String result = "";
+        JSONObject result_json=null;
+        // 定义一个缓冲字符输入流
+        BufferedReader in = null;
+        try {
+            // 将string转成url对象
+            URL realUrl = new URL(url);
+            // 初始化一个链接到那个url的连接
+            URLConnection connection = realUrl.openConnection();
+            // 开始实际的连接
+            connection.connect();
+            // 初始化 BufferedReader输入流来读取URL的响应
+            in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            // 用来临时存储抓取到的每一行的数据
+            String line;
+            while ((line = in.readLine()) != null) {
+                // 遍历抓取到的每一行并将其存储到result里面
+                result += line + "\n";
+            }
+            result_json=new JSONObject(result);
+            result_json.put("sound","http://baicizhan.qiniucdn.com/word_audios/" +str+".mp3");
+            result_json.put("errormsg",0);
+
+        }        catch (JSONException e){
+            result="{\"errormsg\":-1}";
+            try {
+                result_json=new JSONObject(result);
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
+        }
+        catch (Exception e) {
+            System.out.println("发送GET请求出现异常！" + e);
+            result="{\"errormsg\":-2}";
+            try {
+                result_json=new JSONObject(result);
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
+        }// 使用finally来关闭输入流
+        finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (Exception e2) {
+                e2.printStackTrace();
+            }
+        }
+        return result_json;
+
+    }
+
 }
