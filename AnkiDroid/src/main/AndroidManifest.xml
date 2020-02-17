@@ -353,7 +353,7 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-
+        <activity android:name=".AboutDiego"/>
         <activity
             android:exported="false"
             android:name=".multimediacard.activity.MultimediaEditFieldActivity"

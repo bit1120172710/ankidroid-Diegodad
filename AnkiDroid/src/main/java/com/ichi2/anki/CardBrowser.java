@@ -1996,6 +1996,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
             public void run() {
                 try {
                     JSONObject fastq = new JSONObject(parameter);
+                    success[0]=-1;
                     int errormsg= testAdd(fastq.getString("fastq"));
                     success[0]=errormsg;
                 }catch (Exception e)
@@ -2044,7 +2045,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
                     getCol().getModels().setCurrent(m);
 
                     model = m;
-
+                    Log.d("main", "testAdd: "+m.toString());
                     break;
                 }
             } catch (JSONException e) {
@@ -2053,7 +2054,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
         }
         if (model==null)
         {
-            model = new JSONObject("{\"sortf\":0,\"did\":1,\"latexPre\":\"\\\\documentclass[12pt]{article}\\n\\\\special{papersize=3in,5in}\\n\\\\usepackage[utf8]{inputenc}\\n\\\\usepackage{amssymb,amsmath}\\n\\\\pagestyle{empty}\\n\\\\setlength{\\\\parindent}{0in}\\n\\\\begin{document}\\n\",\"latexPost\":\"\\\\end{document}\",\"mod\":1581254285,\"usn\":0,\"vers\":[],\"type\":0,\"css\":\".card {\\n font-family: arial;\\n font-size: 20px;\\n text-align: center;\\n color: black;\\n background-color: white;\\n}\\n\",\"name\":\"默认单词模板\",\"flds\":[{\"name\":\"单词\",\"ord\":0,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"音标\",\"ord\":1,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"释义\",\"ord\":2,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"例句\",\"ord\":3,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"图片\",\"ord\":4,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"音频\",\"ord\":5,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]}],\"tmpls\":[{\"name\":\"默认显示样式\",\"ord\":0,\"qfmt\":\"{{单词}}<br>{{音标}}<span class='voice'>{{音频}}<\\/span>\",\"afmt\":\"{{FrontSide}}\\n\\n<hr id=answer>\\n\\n{{释义}}<br>{{例句}}<br>{{图片}}\",\"did\":null,\"bqfmt\":\"\",\"bafmt\":\"\"}],\"tags\":[],\"id\":\"1581254148877\",\"source\":{\"单词\":\"Baicizhan:word\",\"音标\":\"Baicizhan:accent\",\"释义\":\"Baicizhan:mean_cn\",\"例句\":\"Baicizhan:st\",\"图片\":\"Baicizhan:img\",\"音频\":\"Youdao:sound\"},\"req\":[[0,\"any\",[0,1,5]]]}");
+            model = new JSONObject("{\"sortf\":0,\"did\":1,\"latexPre\":\"\\\\documentclass[12pt]{article}\\n\\\\special{papersize=3in,5in}\\n\\\\usepackage[utf8]{inputenc}\\n\\\\usepackage{amssymb,amsmath}\\n\\\\pagestyle{empty}\\n\\\\setlength{\\\\parindent}{0in}\\n\\\\begin{document}\\n\",\"latexPost\":\"\\\\end{document}\",\"mod\":1581922599,\"usn\":0,\"vers\":[],\"type\":0,\"css\":\".card {\\n font-family: arial;\\n font-size: 20px;\\n text-align: center;\\n color: black;\\n background-color: white;\\n}\\n\",\"name\":\"默认单词模板\",\"flds\":[{\"name\":\"单词\",\"ord\":0,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"音标\",\"ord\":1,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"释义\",\"ord\":2,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"例句\",\"ord\":3,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"图片\",\"ord\":4,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"音频\",\"ord\":5,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]}],\"tmpls\":[{\"name\":\"默认显示样式\",\"ord\":0,\"qfmt\":\"{{单词}}<br>{{音标}}<span class='voice'>{{音频}}<\\/span>\",\"afmt\":\"{{FrontSide}}\\n\\n<hr id=answer>\\n\\n{{释义}}<br>{{例句}}<br>{{图片}}\",\"did\":null,\"bqfmt\":\"\",\"bafmt\":\"\"}],\"tags\":[],\"id\":\"1581922417306\",\"source\":{\"单词\":\"Baicizhan:word\",\"音标\":\"Baicizhan:accent\",\"释义\":\"Baicizhan:mean_cn\",\"例句\":\"Baicizhan:st\",\"图片\":\"Baicizhan:img\",\"音频\":\"Baicizhan:sound\"},\"req\":[[0,\"any\",[0,1,5]]]}");
             getCol().getModels().add(model);
         }
         JSONObject source=new JSONObject();
@@ -2146,10 +2147,9 @@ public class CardBrowser extends NavigationDrawerActivity implements
                     FileOutputStream outStream = new FileOutputStream(file);
                     outStream.write(data);
                     outStream.close();
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } catch (Exception e) {
+                    i++;
+                    continue;
                 }
                 note.values()[i]="<img src=./"+source.getJSONObject(key[0]).getString("word")+".jpg>";
 
@@ -2175,14 +2175,21 @@ public class CardBrowser extends NavigationDrawerActivity implements
                     FileOutputStream outStream = new FileOutputStream(file);
                     outStream.write(data);
                     outStream.close();
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } catch (Exception e) {
+                    i++;
+                    continue;
                 }
                 note.values()[i]="[sound:./"+source.getJSONObject(key[0]).getString("word")+".mp3]";
 
-            }
+            } else if (key[1].equals("st")){
+                try {
+                    note.values()[i]=source.getJSONObject(key[0]).getString(key[1]);
+                }catch ( Exception e)
+                {
+                    i++;
+                    continue;
+                }
+        }
             else{
                 note.values()[i]=source.getJSONObject(key[0]).getString(key[1]);
             }

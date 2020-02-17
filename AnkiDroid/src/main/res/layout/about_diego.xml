@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+>
+
+    <ImageView
+        android:id="@+id/tx_one"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/tx_three"
+        android:layout_alignStart="@+id/tx_three"
+        android:layout_alignLeft="@+id/tx_three"
+        android:layout_marginStart="49dp"
+        android:layout_marginLeft="49dp"
+        android:layout_marginBottom="-5dp"
+
+        android:src="@drawable/diego1"
+        android:textSize="30sp" />
+
+    <ImageView
+        android:id="@+id/tx_two"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tx_three"
+
+        android:layout_alignEnd="@+id/tx_three"
+        android:layout_alignRight="@+id/tx_three"
+        android:layout_marginStart="-85dp"
+        android:layout_marginLeft="-85dp"
+        android:layout_marginTop="-51dp"
+
+        android:layout_marginEnd="42dp"
+        android:layout_marginRight="42dp"
+        android:layout_marginBottom="-55dp"
+        android:src="@drawable/diego2"
+        android:textSize="30sp" />
+
+    <TextView
+        android:id="@+id/tx_three"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+
+
+        android:text="扫描二维码添加diego爸爸"
+        android:textSize="30sp" />
+
+</RelativeLayout>

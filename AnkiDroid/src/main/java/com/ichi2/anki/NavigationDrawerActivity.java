@@ -306,6 +306,9 @@ public abstract class NavigationDrawerActivity extends AnkiActivity implements N
                 case R.id.nav_feedback:
                     openUrl(Uri.parse(AnkiDroidApp.getFeedbackUrl()));
                     break;
+                case R.id.about_diego:
+                    openAboutDiego();
+                    break;
                 default:
                     break;
             }
@@ -314,7 +317,11 @@ public abstract class NavigationDrawerActivity extends AnkiActivity implements N
         mDrawerLayout.closeDrawers();
         return true;
     }
+    protected void openAboutDiego(){
+        Intent intent = new Intent(NavigationDrawerActivity.this, AboutDiego.class);
+        startActivityForResultWithAnimation(intent, 998, ActivityTransitionAnimation.LEFT);
 
+    }
     protected void openCardBrowser() {
         Intent intent = new Intent(NavigationDrawerActivity.this, CardBrowser.class);
         Long currentCardId = getCurrentCardId();

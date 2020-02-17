@@ -33,5 +33,9 @@
             android:id="@+id/nav_feedback"
             android:icon="@drawable/ic_feedback_black_24dp"
             android:title="@string/send_feedback"/>
+        <item
+            android:id="@+id/about_diego"
+            android:icon="@drawable/ic_help_black_24dp"
+            android:title="关于Diego爸爸"/>
     </group>
 </menu>

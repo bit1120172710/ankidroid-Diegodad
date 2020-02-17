@@ -48,10 +48,10 @@
             android:id="@+id/add_note_action_fast"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:contentDescription="@string/menu_add"
+            android:contentDescription="快捷添加单词"
             fab:fab_colorNormal="?attr/fab_normal"
             fab:fab_icon="@drawable/ic_add_white_24dp"
-            fab:fab_title="@string/menu_add"
+            fab:fab_title="快捷添加单词"
             fab:fab_size="mini"
             fab:fab_colorPressed="?attr/fab_pressed"/>
     </com.getbase.floatingactionbutton.FloatingActionsMenu>
