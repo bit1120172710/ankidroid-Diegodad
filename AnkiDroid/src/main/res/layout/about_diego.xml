@@ -1,50 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-xmlns:tools="http://schemas.android.com/tools"
-android:layout_width="match_parent"
-android:layout_height="match_parent"
->
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
 
-    <ImageView
-        android:id="@+id/tx_one"
-        android:layout_width="250dp"
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/tx_three"
-        android:layout_alignStart="@+id/tx_three"
-        android:layout_alignLeft="@+id/tx_three"
-        android:layout_marginStart="49dp"
-        android:layout_marginLeft="49dp"
-        android:layout_marginBottom="-5dp"
+        android:layout_marginTop="12dp">
+        <TextView
+            android:id="@+id/text1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Diego爸爸，北京高校计算机博士，聋哑英语使用者。他在儿子Diego五岁的时候开始专注探索家庭儿童英语学习方法，历经八年研究，整合了现有的英语学习理论、工具和材料，提倡用技术重塑孩子的英语学习过程，提出“家庭是孩子英语学习的主战场”的观点并成功落地。\n
+Diego在爸爸的训练下，轻松自然地学习英语，在10岁时获得剑桥高级英语证书CAE，英语水平接近母语。10岁时独立参加清华大学线上英语课程《通用学术英语CAP》的学习，获得94分的优秀成绩。2019年11月作为儿童代表参加在德国柏林举办的第14届联合国互联网治理大会（IGF），用英文进行主旨发言并进行互动交流。\n
+2019年3月，Diego爸爸将多年实战经验写成一本科学、系统、易拷贝的《我带孩子学英语：英语小达人训练手册》，由机械工业出版社出版发行。本书一经出版，即获得家长广泛认可，成为万千家长的手头必备参考书。
+欢迎扫码关注Diego爸爸训练营微信公众号，获得更多帮助。
+"
+            android:textColor="@color/black"
+            android:textSize="12sp" />
+        <ImageView
+            android:id="@+id/back"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_gravity="center"
+            android:src="@drawable/diego1" />
 
-        android:src="@drawable/diego1"
-        android:textSize="30sp" />
-
-    <ImageView
-        android:id="@+id/tx_two"
-        android:layout_width="250dp"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/tx_three"
-
-        android:layout_alignEnd="@+id/tx_three"
-        android:layout_alignRight="@+id/tx_three"
-        android:layout_marginStart="-85dp"
-        android:layout_marginLeft="-85dp"
-        android:layout_marginTop="-51dp"
-
-        android:layout_marginEnd="42dp"
-        android:layout_marginRight="42dp"
-        android:layout_marginBottom="-55dp"
-        android:src="@drawable/diego2"
-        android:textSize="30sp" />
-
-    <TextView
-        android:id="@+id/tx_three"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-
-
-        android:text="扫描二维码添加diego爸爸"
-        android:textSize="30sp" />
+        <TextView
+            android:id="@+id/text2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="扫码联系Diego爸爸，加入“Diego爸爸家长训练营”微信群，和全国万千关注孩子英语学习的家长一起互通有无，共同进步。
+"
+            android:textColor="@color/black"
+            android:textSize="12sp" />
+        <ImageView
+            android:id="@+id/close"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_gravity="center"
+            android:src="@drawable/diego2" />
+    </LinearLayout>
 
 </RelativeLayout>

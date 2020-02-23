@@ -540,7 +540,7 @@ public class DeckPicker extends NavigationDrawerActivity implements
                     .onPositive((dialog, which) -> {
                         String word = mDialogEditText.getText().toString();
                         Timber.i("DeckPicker:: Creating new deck...");
-                        int[] success = sendRequest("{\"fastq\":\""+ word+"\"}" );
+                        int[] success = sendRequest("{\"fastq\":\""+ word.toLowerCase()+"\"}" );
                         if(success[0] == 0){
                             builder2.setTitle("提示").setMessage("下载成功").setPositiveButton("确定", new DialogInterface.OnClickListener() {
                                 @Override
@@ -2401,7 +2401,7 @@ public class DeckPicker extends NavigationDrawerActivity implements
         //得到所有的model（记录类型）和col中的当前牌组
         ArrayList<JSONObject> models = getCol().getModels().all();
         JSONObject model = null;
-        String basic = "默认单词模板";
+        String basic = "Diego爸爸定制模板";
 
         //遍历所有model，找到Basic模板，设置为当前model
         for (JSONObject m : models) {
@@ -2409,9 +2409,8 @@ public class DeckPicker extends NavigationDrawerActivity implements
 
                 if(m.getString("name").equals(basic)) {
                     getCol().getModels().setCurrent(m);
-
                     model = m;
-
+                    Log.d("main", "testAdd: "+m.toString());
                     break;
                 }
             } catch (JSONException e) {
@@ -2420,15 +2419,13 @@ public class DeckPicker extends NavigationDrawerActivity implements
         }
         if (model==null)
         {
-            model = new JSONObject("{\"sortf\":0,\"did\":1,\"latexPre\":\"\\\\documentclass[12pt]{article}\\n\\\\special{papersize=3in,5in}\\n\\\\usepackage[utf8]{inputenc}\\n\\\\usepackage{amssymb,amsmath}\\n\\\\pagestyle{empty}\\n\\\\setlength{\\\\parindent}{0in}\\n\\\\begin{document}\\n\",\"latexPost\":\"\\\\end{document}\",\"mod\":1581922599,\"usn\":0,\"vers\":[],\"type\":0,\"css\":\".card {\\n font-family: arial;\\n font-size: 20px;\\n text-align: center;\\n color: black;\\n background-color: white;\\n}\\n\",\"name\":\"默认单词模板\",\"flds\":[{\"name\":\"单词\",\"ord\":0,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"音标\",\"ord\":1,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"释义\",\"ord\":2,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"例句\",\"ord\":3,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"图片\",\"ord\":4,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"音频\",\"ord\":5,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]}],\"tmpls\":[{\"name\":\"默认显示样式\",\"ord\":0,\"qfmt\":\"{{单词}}<br>{{音标}}<span class='voice'>{{音频}}<\\/span>\",\"afmt\":\"{{FrontSide}}\\n\\n<hr id=answer>\\n\\n{{释义}}<br>{{例句}}<br>{{图片}}\",\"did\":null,\"bqfmt\":\"\",\"bafmt\":\"\"}],\"tags\":[],\"id\":\"1581922417306\",\"source\":{\"单词\":\"Baicizhan:word\",\"音标\":\"Baicizhan:accent\",\"释义\":\"Baicizhan:mean_cn\",\"例句\":\"Baicizhan:st\",\"图片\":\"Baicizhan:img\",\"音频\":\"Baicizhan:sound\"},\"req\":[[0,\"any\",[0,1,5]]]}");
+            model = new JSONObject("{\"sortf\":0,\"did\":1,\"latexPre\":\"\\\\documentclass[12pt]{article}\\n\\\\special{papersize=3in,5in}\\n\\\\usepackage[utf8]{inputenc}\\n\\\\usepackage{amssymb,amsmath}\\n\\\\pagestyle{empty}\\n\\\\setlength{\\\\parindent}{0in}\\n\\\\begin{document}\\n\",\"latexPost\":\"\\\\end{document}\",\"mod\":1581948529,\"usn\":0,\"vers\":[],\"type\":0,\"css\":\".card {\\n font-family: arial;\\n font-size: 20px;\\n text-align: center;\\n color: black;\\n background-color: white;\\n}\\n\",\"name\":\"Diego爸爸定制模板\",\"flds\":[{\"name\":\"单词\",\"ord\":0,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"释义\",\"ord\":1,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"例句\",\"ord\":2,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"图片\",\"ord\":3,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]},{\"name\":\"音频\",\"ord\":4,\"sticky\":false,\"rtl\":false,\"font\":\"Arial\",\"size\":20,\"media\":[]}],\"tmpls\":[{\"name\":\"Diego爸爸定制显示样式\",\"ord\":0,\"qfmt\":\"{{单词}}<br><span class='voice'>{{音频}}<\\/span>\",\"afmt\":\"{{FrontSide}}<hr id=answer>{{例句}}<br>{{图片}}<br>{{释义}}\",\"did\":null,\"bqfmt\":\"\",\"bafmt\":\"\"}],\"tags\":[],\"id\":\"1581948520316\",\"source\":{\"单词\":\"Baicizhan:word\",\"释义\":\"Baicizhan:mean_cn\",\"例句\":\"Baicizhan:st\",\"图片\":\"Baicizhan:img\",\"音频\":\"Baicizhan:sound\"},\"req\":[[0,\"any\",[0,4]]]}\n");
             getCol().getModels().add(model);
         }
         JSONObject source=new JSONObject();
         try {
             Set hs = new HashSet();
             String[] key1= model.getJSONObject("source").getString("单词").split(":");
-            hs.add(key1[0]);
-            key1=model.getJSONObject("source").getString("音标").split(":");
             hs.add(key1[0]);
             key1=model.getJSONObject("source").getString("释义").split(":");
             hs.add(key1[0]);
@@ -2455,6 +2452,7 @@ public class DeckPicker extends NavigationDrawerActivity implements
         catch (JSONException e) {
             throw new RuntimeException(e);
         }
+
 
         JSONObject cdeck = getCol().getDecks().current();
         long cdeckid = 1;
@@ -2512,11 +2510,12 @@ public class DeckPicker extends NavigationDrawerActivity implements
                     FileOutputStream outStream = new FileOutputStream(file);
                     outStream.write(data);
                     outStream.close();
+                    getCol().getMedia().addFile(file);
                 } catch (Exception e) {
                     i++;
                     continue;
                 }
-                note.values()[i]="<img src=./"+source.getJSONObject(key[0]).getString("word")+".jpg>";
+                note.values()[i]="<img src="+source.getJSONObject(key[0]).getString("word")+".jpg>";
 
             }else if (key[1].equals("sound"))
             {
@@ -2540,11 +2539,12 @@ public class DeckPicker extends NavigationDrawerActivity implements
                     FileOutputStream outStream = new FileOutputStream(file);
                     outStream.write(data);
                     outStream.close();
+                    getCol().getMedia().addFile(file);
                 } catch (Exception e) {
                     i++;
                     continue;
                 }
-                note.values()[i]="[sound:./"+source.getJSONObject(key[0]).getString("word")+".mp3]";
+                note.values()[i]="[sound:"+source.getJSONObject(key[0]).getString("word")+".mp3]";
 
             } else if (key[1].equals("st")){
                 try {
